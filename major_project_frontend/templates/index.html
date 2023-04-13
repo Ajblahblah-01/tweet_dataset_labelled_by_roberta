@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>PyTorch Model Demo</title>
+  </head>
+  <body>
+    <h1>PyTorch Model Demo</h1>
+    <form method="POST">
+      <label for="input_text">Input Text:</label><br>
+      <textarea id="input_text" name="input_text" rows="10" cols="50"></textarea><br>
+      <input type="submit" value="Generate">
+    </form>
+    
+    <hr>
+    <label for="output_text">Generated Text:</label><br>
+    <textarea id="output_text" name="output_text" rows="10" cols="50">
+		{% if output_text %}
+		{{ output_text }}
+		{% endif %}
+	</textarea>
+    
+  </body>
+</html>
