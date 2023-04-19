@@ -7,7 +7,10 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+import time
+
+device = ( "cuda" if torch.cuda.is_available() else "cpu")
 
 import re
 
@@ -173,24 +176,6 @@ class BigramLanguageModel(nn.Module):
 
         return logits, loss
 
-    # def generate(self, idx, max_new_tokens):
-    #     # idx is (B, T) array of indices in the current context
-    #     for _ in range(max_new_tokens):
-    #         # crop idx to the last block_size tokens
-    #         idx_tensor = torch.tensor(idx).unsqueeze(0)
-    #         idx_cond = idx_tensor[:, -block_size:]
-    #         # idx_cond = idx[:, -block_size:]
-    #         # get the predictions
-    #         logits, loss = self(idx_cond)
-    #         # focus only on the last time step
-    #         logits = logits[:, -1, :] # becomes (B, C)
-    #         # apply softmax to get probabilities
-    #         probs = F.softmax(logits, dim=-1) # (B, C)
-    #         # sample from the distribution
-    #         idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)
-    #         # append sampled index to the running sequence
-    #         idx = torch.cat((idx_tensor, idx_next), dim=1)
-    #     return idx
     def generate(self, idx, max_new_tokens):
         # idx is (B, T) array of indices in the current context
         for _ in range(max_new_tokens):
@@ -208,32 +193,13 @@ class BigramLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
-# model = BigramLanguageModel()
-# m = model.to(device)
-# # print the number of parameters in the model
-# print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
-
-# # create a PyTorch optimizer
-# optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-
 
 app = Flask(__name__)
 
 # Load the PyTorch model
 model_path = "final_model_10m.pth"
-model = torch.load("./final_model_10m.pth" , map_location=torch.device('cpu'))
+model = torch.load("./final_model_10m.pth" , map_location=torch.device(device))
 model.eval()
-
-
-
-
-
-#context = torch.zeros((1, 1), dtype=torch.long, device=device)
-
-
-
-
-
 
 # Define the home page route and the function to handle the user input
 @app.route("/")
@@ -242,7 +208,6 @@ def home():
 
 @app.route("/", methods=["POST"])
 def generate_text():
-    
     # Get the user input from the text area
     input_text = request.form["input_text"]
     input_text = encode(input_text)

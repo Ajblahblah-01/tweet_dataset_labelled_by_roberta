@@ -1,24 +1,54 @@
+:root {
+	--contrast-color: #3C2A21;
+	--button-color: #1A120B;
+}
+body{
+	text-align: center;
+	background-color: #E5E5CB;
+	font-family: sans-serif;
+	color: var(--contrast-color);
+}
+#main_heading{
+	color: var(--contrast-color);
+}
 .text-boxes {
+	
 	display: flex;
 	justify-content: space-between;
 	margin-bottom: 20px;
+	font-size: 15px;
 }
-
 .text-box {
+	margin-top: 10px;
 	flex-basis: 45%;
 }
 
 textarea {
+	background-color: #f5eee6;
 	width: 100%;
-	margin-bottom: 10px;
-}
+	margin: 10px 0px 5px 0px;
+	border: 1.2px solid var(--button-color);  /* Sets a solid border with a light gray color */
+	border-radius: 4px;  /* Adds a slight curve to the corners of the border */
+	padding: 8px;  /* Adds some padding to the inside of the border */
+	resize: vertical;  /* Allows the user to resize the height of the textarea vertically */
 
+}
+/* .textarea_headings{
+	padding-bottom: 10px;
+} */
 #generate-button {
-	font-size: 20px;
-	padding: 10px 20px;
+	font-size: 15px;
+	padding: 5px 10px;
 	border-radius: 5px;
-	background-color: #2ecc71;
+	background-color: var(--button-color);
 	color: white;
 	border: none;
 	cursor: pointer;
+}
+.main_container{
+	/* center this div vertically and horizontally */
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
 }
