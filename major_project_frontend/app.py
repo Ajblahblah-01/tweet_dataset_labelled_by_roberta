@@ -14,8 +14,18 @@ device = ( "cuda" if torch.cuda.is_available() else "cpu")
 
 import re
 
-url = 'https://raw.githubusercontent.com/Ajblahblah-01/tweet_dataset_labelled_by_roberta/main/tweet_dataset.csv'
+url = 'https://raw.githubusercontent.com/Ajblahblah-01/tweet_dataset_labelled_by_roberta/main/labelled_dataset.csv'
 df = pd.read_csv(url)
+def add_sentiment_token(text, sentiment):
+    if sentiment == 'Negative':
+        return '<neg> ' + text
+    elif sentiment == 'Positive':
+        return '<pos> ' + text
+    elif sentiment == 'Neutral':
+        return '<neu> ' + text
+    else:
+        return text
+df['Tweet'] = df.apply(lambda x: add_sentiment_token(x['Tweet'], x['sentiment']), axis=1)
 text = ''.join(df['Tweet'].tolist())
 text = re.sub(r'[^a-zA-Z0-9\s\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\|\;\:\'\"\,\.\/\<\>\?]', '', text)
 chars = sorted(list(set(text)))
@@ -24,6 +34,8 @@ translation_table = str.maketrans("", "", "".join(chars_to_remove))
 text = text.translate(translation_table)
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
+if '<' in chars:
+    print("true")
 
 stoi = { ch:i for i,ch in enumerate(chars) }
 itos = { i:ch for i,ch in enumerate(chars) }
@@ -197,9 +209,9 @@ class BigramLanguageModel(nn.Module):
 app = Flask(__name__)
 
 # Load the PyTorch model
-model_path = "final_model_10m.pth"
-model = torch.load("./final_model_10m.pth" , map_location=torch.device(device))
+model = torch.load("./flask_model_10m.pth" , map_location=torch.device(device))
 model.eval()
+
 
 # Define the home page route and the function to handle the user input
 @app.route("/")
@@ -213,8 +225,14 @@ def generate_text():
     input_text = encode(input_text)
     # Generate new text using the PyTorch model
     context = torch.tensor(input_text, dtype=torch.long, device=device).reshape(1,-1)
-    output_text = decode(model.generate(context, max_new_tokens=25)[0].tolist())
+    output_text = decode(model.generate(context, max_new_tokens=150)[0].tolist())
 
+    # code to delete <neg> <pos> and <neu> fromo output text
+    output_text = output_text.replace("<neg>", "").replace("<pos>", "").replace("<neu>", "")
+    # code to remove extra spaces when there are multiple spaces
+    output_text = " ".join(output_text.split())
+    # it still has some extra spaces at the begining of the text
+    output_text = output_text.strip()
     # Return the generated text to the page
     return render_template("index.html", output_text=output_text)
 
