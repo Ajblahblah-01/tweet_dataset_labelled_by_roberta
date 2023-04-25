@@ -6,46 +6,47 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from transformers import BertTokenizer
 
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+# from scipy.special import softmax
 
-import time
+from tqdm import tqdm
 
 device = ( "cuda" if torch.cuda.is_available() else "cpu")
 
 import re
 
-url = 'https://raw.githubusercontent.com/Ajblahblah-01/tweet_dataset_labelled_by_roberta/main/labelled_dataset.csv'
-df = pd.read_csv(url)
-def add_sentiment_token(text, sentiment):
-    if sentiment == 'Negative':
-        return '<neg> ' + text
-    elif sentiment == 'Positive':
-        return '<pos> ' + text
-    elif sentiment == 'Neutral':
-        return '<neu> ' + text
-    else:
-        return text
-df['Tweet'] = df.apply(lambda x: add_sentiment_token(x['Tweet'], x['sentiment']), axis=1)
-text = ''.join(df['Tweet'].tolist())
-text = re.sub(r'[^a-zA-Z0-9\s\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\|\;\:\'\"\,\.\/\<\>\?]', '', text)
-chars = sorted(list(set(text)))
-chars_to_remove = ['\xa0', '|', '\t', '\n', '\r']
-translation_table = str.maketrans("", "", "".join(chars_to_remove))
-text = text.translate(translation_table)
-chars = sorted(list(set(text)))
-vocab_size = len(chars)
-if '<' in chars:
-    print("true")
+# url = 'https://raw.githubusercontent.com/Ajblahblah-01/tweet_dataset_labelled_by_roberta/main/labelled_dataset.csv'
+# df = pd.read_csv(url)
+# def add_sentiment_token(text, sentiment):
+#     if sentiment == 'Negative':
+#         return '<neg> ' + text
+#     elif sentiment == 'Positive':
+#         return '<pos> ' + text
+#     elif sentiment == 'Neutral':
+#         return '<neu> ' + text
+#     else:
+#         return text
+# df['Tweet'] = df.apply(lambda x: add_sentiment_token(x['Tweet'], x['sentiment']), axis=1)
+# text = ''.join(df['Tweet'].tolist())
+# text = re.sub(r'[^a-zA-Z0-9\s\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\|\;\:\'\"\,\.\/\<\>\?]', '', text)
+# chars = sorted(list(set(text)))
+# chars_to_remove = ['\xa0', '|', '\t', '\n', '\r']
+# translation_table = str.maketrans("", "", "".join(chars_to_remove))
+# text = text.translate(translation_table)
+# chars = sorted(list(set(text)))
+# vocab_size = len(chars)
 
-stoi = { ch:i for i,ch in enumerate(chars) }
-itos = { i:ch for i,ch in enumerate(chars) }
-encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+# stoi = { ch:i for i,ch in enumerate(chars) }
+# itos = { i:ch for i,ch in enumerate(chars) }
+# encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
+# decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
 
-data = torch.tensor(encode(text), dtype=torch.long)
-n = int(0.95*len(data)) # first 95% will be training, rest validation data
-train_data = data[:n]
-val_data = data[n:]
+# data = torch.tensor(encode(text), dtype=torch.long)
+# n = int(0.95*len(data)) # first 95% will be training, rest validation data
+# train_data = data[:n]
+# val_data = data[n:]
 
 # hyperparameters
 batch_size = 64 # how many independent sequences will we process in parallel?
@@ -59,28 +60,28 @@ n_head = 16 # number of heads in the multiattention
 n_layer = 12 # number of decoder blocks
 dropout = 0.1 
 
-def get_batch(split):
-    # generate a small batch of data of inputs x and targets y
-    data = train_data if split == 'train' else val_data
-    ix = torch.randint(len(data) - block_size, (batch_size,))
-    x = torch.stack([data[i:i+block_size] for i in ix])
-    y = torch.stack([data[i+1:i+block_size+1] for i in ix])
-    x, y = x.to(device), y.to(device)
-    return x, y
+# def get_batch(split):
+#     # generate a small batch of data of inputs x and targets y
+#     data = train_data if split == 'train' else val_data
+#     ix = torch.randint(len(data) - block_size, (batch_size,))
+#     x = torch.stack([data[i:i+block_size] for i in ix])
+#     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
+#     x, y = x.to(device), y.to(device)
+#     return x, y
 
-@torch.no_grad()
-def estimate_loss():
-    out = {}
-    model.eval()
-    for split in ['train', 'val']:
-        losses = torch.zeros(eval_iters)
-        for k in range(eval_iters):
-            X, Y = get_batch(split)
-            logits, loss = model(X, Y)
-            losses[k] = loss.item()
-        out[split] = losses.mean()
-    model.train()
-    return out
+# @torch.no_grad()
+# def estimate_loss():
+#     out = {}
+#     model.eval()
+#     for split in ['train', 'val']:
+#         losses = torch.zeros(eval_iters)
+#         for k in range(eval_iters):
+#             X, Y = get_batch(split)
+#             logits, loss = model(X, Y)
+#             losses[k] = loss.item()
+#         out[split] = losses.mean()
+#     model.train()
+#     return out
 
 
 class Head(nn.Module):
@@ -206,10 +207,62 @@ class BigramLanguageModel(nn.Module):
         return idx
 
 
+
+tokenizer_bert = BertTokenizer.from_pretrained('./tokenizer/arpit')
+
+
+def encode(s):
+    # Tokenize the input string on the specified device
+    tokens = tokenizer_bert.encode(s, add_special_tokens=True, return_tensors='pt').to(device)
+    # Flatten the tokens to a 1D tensor
+    return tokens.view(-1)
+
+def decode(l):
+     # Convert the list of integers to a 1D PyTorch tensor
+    tokens = torch.tensor(l, dtype=torch.long, device=device)
+    # Convert the tensor to a list of tokens
+    tokens = tokens.view(-1)
+    # Convert the list of tokens to a string
+    return tokenizer_bert.decode(tokens)
+
+roberta = "cardiffnlp/twitter-roberta-base-sentiment"
+roberta_model = AutoModelForSequenceClassification.from_pretrained(roberta)
+tokenizer = AutoTokenizer.from_pretrained(roberta)
+
+labels = ['Negative', 'Neutral', 'Positive']
+
+def sent(tweet, max_length=350):
+    # Preprocess tweet
+    tweet_words = []
+    for word in tweet.split(' '):
+        if word.startswith('@') and len(word) > 1:
+            word = '@user'
+        elif word.startswith('http'):
+            word = "http"
+        tweet_words.append(word)
+    tweet_proc = " ".join(tweet_words)
+
+    # Truncate tweet to specified maximum length
+    tweet_trunc = tweet_proc[:max_length]
+
+    # Tokenize and encode tweet
+    encoded_tweet = tokenizer(tweet_trunc, return_tensors='pt')
+
+    # Perform sentiment analysis
+    output = roberta_model(**encoded_tweet)
+    scores = output[0][0].detach().cpu().numpy()
+    scores = torch.softmax(torch.from_numpy(scores), dim=0)
+
+    # Get the predicted sentiment label
+    max_score, sentiment = torch.max(scores, dim=0)
+    sentiment_label = labels[sentiment.item()]
+
+    return sentiment_label
+
 app = Flask(__name__)
 
 # Load the PyTorch model
-model = torch.load("./flask_model_10m.pth" , map_location=torch.device(device))
+model = torch.load("/Users/arpit/Downloads/python_nb/major_project_frontend/05-model_12m.pth" , map_location=torch.device('cpu'))
 model.eval()
 
 
@@ -222,20 +275,47 @@ def home():
 def generate_text():
     # Get the user input from the text area
     input_text = request.form["input_text"]
-    input_text = encode(input_text)
-    # Generate new text using the PyTorch model
-    context = torch.tensor(input_text, dtype=torch.long, device=device).reshape(1,-1)
-    output_text = decode(model.generate(context, max_new_tokens=150)[0].tolist())
+    sentiment = ""
+    if input_text == '<neu>': 
+        sentiment = 'Neutral' 
+    elif input_text == '<pos>': 
+        sentiment = 'Positive' 
+    elif input_text == '<neg>':
+        sentiment = 'Negative'
 
-    # code to delete <neg> <pos> and <neu> fromo output text
-    output_text = output_text.replace("<neg>", "").replace("<pos>", "").replace("<neu>", "")
-    # code to remove extra spaces when there are multiple spaces
-    output_text = " ".join(output_text.split())
-    # it still has some extra spaces at the begining of the text
-    output_text = output_text.strip()
-    # Return the generated text to the page
+    context = encode(input_text).reshape(1,-1)
+    output_text = ""
+    while True:
+        output_text = decode(model.generate(context, max_new_tokens=150)[0].tolist())
+        output_text = output_text.replace("< neg >", "").replace("< pos >", "").replace("< neu >", "").replace("[CLS]", "").replace("[SEP]", "")
+        output_text = " ".join(output_text.split())
+        output_text = output_text.strip()
+        if len(sentiment) == 0 or sentiment == sent(output_text):
+            break
     return render_template("index.html", output_text=output_text)
 
 if __name__ == "__main__":
     app.run(debug=True)
 
+
+# context_arr = ['<neg>' , '<neu>' , '<pos>']
+# output_text = []
+# for input_text in tqdm(context_arr):
+    
+
+#     context = encode(input_text).reshape(1,-1)
+#     # context = torch.tensor(input, dtype=torch.long, device=device)
+#     i = 0
+#     while i < 3:
+#         temp_text = decode(model.generate(context, max_new_tokens=150)[0].tolist())
+#         temp_text = temp_text.replace("<neg>", "").replace("<pos>", "").replace("<neu>", "").replace("[CLS]", "").replace("[SEP]", "")
+#         temp_text = " ".join(temp_text.split())
+#         temp_text = temp_text.strip()
+#         if sent(temp_text) == sentiment:
+#             output_text.append(temp_text)
+#             i += 1
+
+
+
+# for text in output_text:
+#     print(sent(text))
