@@ -8,9 +8,6 @@ body{
 	font-family: sans-serif;
 	color: var(--contrast-color);
 }
-#main_heading{
-	color: var(--contrast-color);
-}
 .text-boxes {
 	display: flex;
 	justify-content: space-between;
@@ -47,3 +44,31 @@ textarea {
 	left: 50%;
 	transform: translate(-50%, -50%);
 }
+
+.css-trick-for-heading{
+	/*This part is important for centering*/
+	display: inline-block;
+	margin-bottom: 50px;
+}
+.main_heading{
+	color: var(--contrast-color);
+	width: 10ch;
+	animation: typing 2s steps(10), blink .5s step-end infinite alternate;
+	white-space: nowrap;
+	overflow: hidden;
+	border-right: 3px solid;
+	font-family: monospace;
+	font-size: 2em;
+}
+
+@keyframes typing {
+	from {
+	  width: 0
+	}
+  }
+	  
+@keyframes blink {
+	50% {
+	  border-color: transparent
+	}
+  }

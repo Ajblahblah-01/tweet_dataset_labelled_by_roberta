@@ -83,7 +83,8 @@ dropout = 0.1
 #     model.train()
 #     return out
 
-
+tokenizer_bert = BertTokenizer.from_pretrained('./tokenizer/arpit')
+vocab_size = tokenizer_bert.vocab_size
 class Head(nn.Module):
     """ one head of self-attention """
 
@@ -208,7 +209,7 @@ class BigramLanguageModel(nn.Module):
 
 
 
-tokenizer_bert = BertTokenizer.from_pretrained('./tokenizer/arpit')
+
 
 
 def encode(s):
@@ -275,6 +276,7 @@ def home():
 def generate_text():
     # Get the user input from the text area
     input_text = request.form["input_text"]
+    flag = False
     sentiment = ""
     if input_text == '<neu>': 
         sentiment = 'Neutral' 
@@ -282,20 +284,27 @@ def generate_text():
         sentiment = 'Positive' 
     elif input_text == '<neg>':
         sentiment = 'Negative'
+    else:
+        sentiment = input_text
+        flag = True
 
     context = encode(input_text).reshape(1,-1)
     output_text = ""
     while True:
-        output_text = decode(model.generate(context, max_new_tokens=150)[0].tolist())
+        output_text = decode(model.generate(context, max_new_tokens=100)[0].tolist())
         output_text = output_text.replace("< neg >", "").replace("< pos >", "").replace("< neu >", "").replace("[CLS]", "").replace("[SEP]", "")
         output_text = " ".join(output_text.split())
         output_text = output_text.strip()
-        if len(sentiment) == 0 or sentiment == sent(output_text):
+        if flag == True or sent(output_text) == sentiment:
             break
-    return render_template("index.html", output_text=output_text)
+    return render_template("index.html", output_text=output_text, sentiment = sentiment)
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+
+
 
 
 # context_arr = ['<neg>' , '<neu>' , '<pos>']

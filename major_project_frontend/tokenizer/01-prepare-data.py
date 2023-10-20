@@ -32,5 +32,6 @@ for sample in tqdm(df['Tweet'].values):
         file_count += 1
         text_data = []
 
+# remaining samples to be written to file
 with open(os.path.join(PATH, f'text_data_{file_count}.txt'), 'w') as f:
     f.write('/n'.join(text_data))

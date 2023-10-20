@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*html": "html",
+        "ios": "cpp",
+        "vector": "cpp"
+    },
+    "python.analysis.typeCheckingMode": "basic"
+}

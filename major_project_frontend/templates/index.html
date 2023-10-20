@@ -11,13 +11,13 @@
   <body>
     
     <div class = "main_container">
-      <h1 id = "main_heading">Model Demo</h1>
+      <div class="css-trick-for-heading"><div class = "main_heading">Model Demo</div></div>
       <br>
       <div class = "text-boxes">
         <div class = "text-box">
           <form method="POST">
             <label class = "textarea_headings" for="input_text">Input Text</label><br>
-            <textarea id="input_text"  name="input_text" rows="10" cols="50"></textarea><br>
+            <textarea id="input_text"  name="input_text" rows="10" cols="50">{{ sentiment }}</textarea><br>
             <input type="submit" id = "generate-button" value="Generate">
           </form>
         </div>
@@ -25,9 +25,7 @@
         
         <div class = "text-box">
           <label class = "textarea_headings" for="output_text">Generated Text</label><br>
-          <textarea id="output_text"  name="output_text" rows="10" cols="50">
-            {{ output_text }}
-          </textarea>
+          <textarea id="output_text"  name="output_text" rows="10" cols="50">{{ output_text }}</textarea>
         </div>
       </div>
     </div>

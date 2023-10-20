@@ -14,7 +14,7 @@ tokenizer = BertWordPieceTokenizer(
 )
 
 # and then train
-tokenizer.train(files = paths, vocab_size=5_000, min_frequency=2, show_progress=True, wordpieces_prefix='##' , special_tokens=[
+tokenizer.train(files = paths, vocab_size=1000, min_frequency=2, show_progress=True, wordpieces_prefix='##' , special_tokens=[
                     '[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]' , '[POS]', '[NEG]', '[NEU]'])
 
 tokenizer.save_model('./arpit', 'arpit')
